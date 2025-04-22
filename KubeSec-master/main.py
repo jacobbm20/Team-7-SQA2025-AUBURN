@@ -7,8 +7,8 @@ import scanner
 import pandas as pd 
 import constants
 
-# Adding comment for testing git hook commit
-print("This is a test for git hook pre commit running bandit on all .py files")
+# Testing git hook pre commit
+print("TESTING for git hook pre commit running bandit on all .py files")
 def getCountFromAnalysis(ls_):
     list2ret           = []
     for tup_ in ls_:
