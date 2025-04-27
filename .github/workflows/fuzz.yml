@@ -23,7 +23,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -r KubeSec-master/requirements.txt
 
     - name: Run fuzz tests
       run: python fuzz.py
