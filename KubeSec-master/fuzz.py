@@ -7,6 +7,8 @@ import traceback
 import importlib.util
 import sys
 
+# Triggering GitHub Actions
+
 # Force import of local parser.py as parser_local
 parser_path = os.path.join(os.path.dirname(__file__), "parser.py")
 spec = importlib.util.spec_from_file_location("parser_local", parser_path)
