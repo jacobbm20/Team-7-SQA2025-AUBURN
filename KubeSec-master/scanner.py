@@ -3,10 +3,18 @@ Akond Rahman
 May 03, 2021 
 Code to detect security anti-patterns 
 '''
-import parser 
+import importlib.util
+import sys
+import os
+
+parser_path = os.path.join(os.path.dirname(__file__), "parser.py")
+spec = importlib.util.spec_from_file_location("parser", parser_path)
+parser = importlib.util.module_from_spec(spec)
+sys.modules["parser"] = parser
+spec.loader.exec_module(parser)
+
 import constants 
 import graphtaint 
-import os 
 import pandas as pd 
 import numpy as np
 import json
