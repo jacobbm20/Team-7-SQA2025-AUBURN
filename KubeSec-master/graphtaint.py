@@ -7,15 +7,20 @@ import constants
 import parser 
 import os 
 from itertools import combinations
+import myLogger as myLogger
+
+logObj = myLogger.giveMeLoggingObject()
 
 def getYAMLFiles(path_to_dir):
     valid_  = [] 
+    logObj.info(f"Scanning directory for YAML files...")
     for root_, dirs, files_ in os.walk( path_to_dir ):
        for file_ in files_:
            full_p_file = os.path.join(root_, file_)
            if(os.path.exists(full_p_file)):
              if (full_p_file.endswith( constants.YAML_EXTENSION  ) or full_p_file.endswith( constants.YML_EXTENSION  )  ):
                valid_.append(full_p_file)
+    logObj.info(f"Total YAML files found: {len(valid_)}")
     return valid_ 
 
 def constructHelmString(hiera_tuple): 
@@ -35,6 +40,7 @@ def getHelmTemplateContent( templ_dir ):
 
 
 def getMatchingTemplates(path2script, hierarchy_ls):
+    logObj.info(f"Finding matching Helm templates for script: {path2script}")
     templ_list = [] 
     template_content_dict, helm_string_list = {}, []
     templateDirOfHelmValues = os.path.dirname( path2script )  + constants.TEMPLATES_DIR_KW 
@@ -49,6 +55,7 @@ def getMatchingTemplates(path2script, hierarchy_ls):
                     match_count = template_string.count( helm_string  )
                     for _ in range(match_count):
                         templ_list.append( (template_file, helm_string ) )
+    logObj.info(f"Template matching completed with {len(templ_list)} matches.")
     return templ_list
 
 def getValidTaints(  lis_template_matches ): 
@@ -71,7 +78,7 @@ def mineSecretGraph( path2script, yaml_dict , secret_dict ):
     Works only for secrets. 
     Need to provide script path, script dict, dictionary of secrets that appear for the script  
     '''
-
+    logObj.info(f"Mining secret graph for {path2script}")
     within_match_head = None 
     hierarchy_list = []
     for k_, v_ in secret_dict.items():
@@ -102,7 +109,8 @@ def mineSecretGraph( path2script, yaml_dict , secret_dict ):
                     within_match_head = hierarchy_list[0]
     valid_taints = getValidTaints( templ_match_list ) 
     # print( within_match_head ) 
-    return within_match_head, templ_match_list, valid_taints 
+    logObj.info(f"Secret mining resulted in {len(valid_taints)} valid taints.")
+    return within_match_head, templ_match_list, valid_taints    
 
 
 def getSHFiles(path_to_dir):
@@ -143,6 +151,7 @@ def mineViolationGraph(path2script, yaml_dict, taint_value, k_ ):
     Works for all types. 
     Need to provide script path, script dict, value identified as smell, key for which value occurs 
     '''
+    logObj.info(f"Mining violation graph for {path2script}")
     hierarchy_list = [] 
     hierarchy_keys = parser.keyMiner(yaml_dict, taint_value)
     hierarchy_keys = [x_ for x_ in hierarchy_keys if x_ != constants.YAML_SKIPPING_TEXT ] 
@@ -160,6 +169,7 @@ def mineViolationGraph(path2script, yaml_dict, taint_value, k_ ):
     templ_match_list = []
     templ_match_list = getMatchingTemplates( path2script, hierarchy_list  )    
 
+    logObj.info(f"Violation mining found {len(templ_match_list)} template matches.")
     return templ_match_list
 
 def mineServiceGraph( script_path, dict_yaml, src_val ): 

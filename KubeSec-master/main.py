@@ -6,17 +6,29 @@ Source Code to Run Tool on All Kubernetes Manifests
 import scanner 
 import pandas as pd 
 import constants
+import myLogger as myLogger
+from pathlib import Path
+import typer
+
+# Initializing a log object
+logObj = myLogger.giveMeLoggingObject()
 
 # Testing git hook pre commit
 print("TESTING for git hook pre commit running bandit on all .py files")
+
 def getCountFromAnalysis(ls_):
+    logObj.info(f"getCountFromAnalysis program began with {len(ls_)} items")
     list2ret           = []
     for tup_ in ls_:
-        within_sec_cnt = 0 
-        dir_name       = tup_[0]
-        script_name    = tup_[1]        
-        within_secret  = tup_[2]  # a list of dicts: [unameDict, passwordDict, tokenDict]
-        within_sec_cnt = len(within_secret[0]) + len( within_secret[1]  ) + len( within_secret[2] )
+        try:
+            within_sec_cnt = 0 
+            dir_name       = tup_[0]
+            script_name    = tup_[1]        
+            within_secret  = tup_[2]  # a list of dicts: [unameDict, passwordDict, tokenDict]
+            within_sec_cnt = len(within_secret[0]) + len( within_secret[1]  ) + len( within_secret[2] )
+        except Exception as e:
+            logObj.error(f"Error in processing tuple {tup_}: {e}")
+
         '''
         ### format: ('data', 'password', ([], ['MTIzNAo='], [])) => (<rootKey>, <key>, <data_list>) ... need the list of the last tuple
         if isinstance( within_secret, tuple ):
@@ -45,28 +57,33 @@ def getCountFromAnalysis(ls_):
         helm_flag      = tup_[22]
 
         list2ret.append(  ( dir_name, script_name, within_sec_cnt, len(taint_secret), len(privilege_dic), len(http_dict), len(secuContextDic), len(nSpaceDict), len(absentResoDict), len(rollUpdateDic), len(netPolicyDict), len(pidfDict), len(ipcDict), len(dockersockDic), len(hostNetDict), len(cap_sys_dic), len(host_alias_dic), len(allow_priv_dic), len(unconfined_dic), len(cap_module_dic) , k8s_flag, helm_flag  )  )
+        logObj.info(f"getCountFromAnalysis program completed with {len(list2ret)} results")
     return list2ret
 
 
 def main(directory: Path = typer.Argument(..., exists=True, help="Absolute path to the folder than contains Kubernetes manifests"),
          ):
+    logObj.info("Main program has began...")
     """
     Run KubeSec in a Kubernetes directory and get results in a CSV file.
 
     """
-    content_as_ls, sarif_json   = scanner.runScanner( directory )
+    try:
+        content_as_ls, sarif_json = scanner.runScanner(directory)
+        logObj.info(f"scanner.runScanner completed with {len(content_as_ls)} items")
     
-    with open("SLIKUBE.sarif", "w") as f:
-      f.write(sarif_json)
+        with open("SLIKUBE.sarif", "w") as f:
+            f.write(sarif_json)
 
-    df_all          = pd.DataFrame( getCountFromAnalysis( content_as_ls ) )
-    outfile = Path(directory, "slikube_results.csv")
+        df_all = pd.DataFrame( getCountFromAnalysis( content_as_ls ) )
+        outfile = Path(directory, "slikube_results.csv")
 
-    df_all.to_csv( outfile, header= constants.CSV_HEADER , index=False, encoding= constants.CSV_ENCODING )
+        df_all.to_csv( outfile, header= constants.CSV_HEADER , index=False, encoding= constants.CSV_ENCODING )
 
+    except Exception as e:
+        logObj.error(f"Error in main: {e}")
 
 if __name__ == '__main__':
-
     '''
     DO NOT DELETE ALL IN K8S_REPOS AS TAINT TRACKING RELIES ON BASH SCRIPTS, ONE OF THE STRENGTHS OF THE TOOL 
     '''
@@ -82,7 +99,3 @@ if __name__ == '__main__':
 
     # take sarif_json from scanner
     main()
-
-
-
-
