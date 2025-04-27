@@ -26,4 +26,4 @@ jobs:
         pip install -r KubeSec-master/requirements.txt
 
     - name: Run fuzz tests
-      run: python fuzz.py
+      run: python KubeSec-master/fuzz.py
